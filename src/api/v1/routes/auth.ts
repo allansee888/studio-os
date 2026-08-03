@@ -3,9 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../../db/prisma";
 import { authenticate } from "../../middlewares/auth";
+import { config } from "../../../config/index";
 
 const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key-change-in-production";
+const JWT_SECRET = config.JWT_SECRET;
 
 router.post("/login", async (req, res) => {
   try {
@@ -96,7 +97,7 @@ router.post("/login", async (req, res) => {
 
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: config.NODE_ENV === "production",
       sameSite: "strict",
       maxAge: 3600000 // 1 hour
     });

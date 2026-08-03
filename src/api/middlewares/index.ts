@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { config } from '../../config/index';
 
 // Placeholder for future authentication
 export const requireAuthPlaceholder = (req: Request, res: Response, next: NextFunction) => {
@@ -15,6 +16,6 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
   console.error('Unhandled Error:', err);
   res.status(500).json({
     error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: config.NODE_ENV === 'development' ? err.message : undefined
   });
 };

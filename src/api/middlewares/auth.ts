@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../db/prisma";
+import { config } from "../../config/index";
 
-const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key-change-in-production";
+const JWT_SECRET = config.JWT_SECRET;
 
 // Extend Request type to include user
 declare global {

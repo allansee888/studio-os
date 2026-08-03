@@ -1,1 +1,1 @@
-export const dummy = true;
+export * from './domain.ts';
