@@ -49,7 +49,7 @@ async function runTests() {
   await test("CategoryService.createCategory - Create Root Category", async () => {
     const cat = await CategoryService.createCategory({
       name: "Test Root Category",
-      code: `CAT-TEST-ROOT-${Date.now()}`,
+      code: `CAT-R-${Date.now().toString().slice(-6)}`,
       displayOrder: 10,
       isActive: true,
     });
@@ -60,7 +60,7 @@ async function runTests() {
   await test("CategoryService.createCategory - Create Child Category", async () => {
     const cat = await CategoryService.createCategory({
       name: "Test Sub Category",
-      code: `CAT-TEST-SUB-${Date.now()}`,
+      code: `CAT-S-${Date.now().toString().slice(-6)}`,
       parentCategoryId: cat1Id,
       displayOrder: 1,
       isActive: true,
