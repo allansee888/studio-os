@@ -6,3 +6,4 @@ export * from "./CrudStatusBadge";
 export * from "./CrudEmptyState";
 export * from "./CrudLoadingState";
 export * from "./CrudErrorState";
+export * from "./CrudDeleteDialog";

@@ -12,5 +12,6 @@ describe("CRUD Shared Components Library", () => {
     assert.strictEqual(typeof CrudComponents.CrudEmptyState, "function");
     assert.strictEqual(typeof CrudComponents.CrudLoadingState, "function");
     assert.strictEqual(typeof CrudComponents.CrudErrorState, "function");
+    assert.strictEqual(typeof CrudComponents.CrudDeleteDialog, "function");
   });
 });
