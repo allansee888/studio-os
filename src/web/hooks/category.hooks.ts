@@ -1,7 +1,4 @@
 import {
-  useQuery,
-  useMutation,
-  useQueryClient,
   UseQueryOptions,
   UseMutationOptions,
 } from "@tanstack/react-query";
@@ -16,6 +13,13 @@ import {
   CreateCategoryInput,
   UpdateCategoryInput,
 } from "../../packages/validation/category.validation";
+import {
+  useCrudList,
+  useCrudItem,
+  useCrudCreate,
+  useCrudUpdate,
+  useCrudDelete,
+} from "../../hooks/crud";
 
 /**
  * Standardized Query Key Factory for Category queries
@@ -35,10 +39,11 @@ export function useCategories(
   params?: CategoryQueryParams,
   options?: Partial<UseQueryOptions<CategoryListResponse, Error>>
 ) {
-  return useQuery<CategoryListResponse, Error>({
+  return useCrudList<CategoryListResponse, CategoryQueryParams>({
     queryKey: categoryKeys.list(params),
-    queryFn: () => categoryApi.getCategories(params),
-    ...options,
+    fetcher: (p) => categoryApi.getCategories(p),
+    params,
+    queryOptions: options,
   });
 }
 
@@ -49,11 +54,12 @@ export function useCategory(
   id: string,
   options?: Partial<UseQueryOptions<CategorySingleResponse, Error>>
 ) {
-  return useQuery<CategorySingleResponse, Error>({
+  return useCrudItem<CategorySingleResponse, string>({
+    id,
     queryKey: categoryKeys.detail(id),
-    queryFn: () => categoryApi.getCategory(id),
+    fetcher: (catId) => categoryApi.getCategory(catId),
     enabled: !!id,
-    ...options,
+    queryOptions: options,
   });
 }
 
@@ -63,17 +69,10 @@ export function useCategory(
 export function useCreateCategory(
   options?: UseMutationOptions<CategorySingleResponse, Error, CreateCategoryInput>
 ) {
-  const queryClient = useQueryClient();
-
-  return useMutation<CategorySingleResponse, Error, CreateCategoryInput>({
-    ...options,
-    mutationFn: (data: CreateCategoryInput) => categoryApi.createCategory(data),
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: categoryKeys.all });
-      if (options?.onSuccess) {
-        (options.onSuccess as any)(data, variables, context);
-      }
-    },
+  return useCrudCreate<CategorySingleResponse, CreateCategoryInput>({
+    fetcher: (data) => categoryApi.createCategory(data),
+    invalidateQueryKeys: [categoryKeys.all],
+    mutationOptions: options,
   });
 }
 
@@ -87,18 +86,16 @@ export function useUpdateCategory(
     { id: string; data: UpdateCategoryInput }
   >
 ) {
-  const queryClient = useQueryClient();
-
-  return useMutation<CategorySingleResponse, Error, { id: string; data: UpdateCategoryInput }>({
-    ...options,
-    mutationFn: ({ id, data }) => categoryApi.updateCategory(id, data),
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: categoryKeys.all });
-      queryClient.invalidateQueries({ queryKey: categoryKeys.detail(variables.id) });
-      if (options?.onSuccess) {
-        (options.onSuccess as any)(data, variables, context);
-      }
-    },
+  return useCrudUpdate<
+    CategorySingleResponse,
+    { id: string; data: UpdateCategoryInput }
+  >({
+    fetcher: ({ id, data }) => categoryApi.updateCategory(id, data),
+    invalidateQueryKeys: (_data, variables) => [
+      categoryKeys.all,
+      categoryKeys.detail(variables.id),
+    ],
+    mutationOptions: options,
   });
 }
 
@@ -108,17 +105,9 @@ export function useUpdateCategory(
 export function useDeleteCategory(
   options?: UseMutationOptions<DeleteCategoryResponse, Error, string>
 ) {
-  const queryClient = useQueryClient();
-
-  return useMutation<DeleteCategoryResponse, Error, string>({
-    ...options,
-    mutationFn: (id: string) => categoryApi.deleteCategory(id),
-    onSuccess: (data, variables, context) => {
-      queryClient.invalidateQueries({ queryKey: categoryKeys.all });
-      if (options?.onSuccess) {
-        (options.onSuccess as any)(data, variables, context);
-      }
-    },
+  return useCrudDelete<DeleteCategoryResponse, string>({
+    fetcher: (id) => categoryApi.deleteCategory(id),
+    invalidateQueryKeys: [categoryKeys.all],
+    mutationOptions: options,
   });
 }
-
