@@ -9,6 +9,7 @@ import { Breadcrumbs } from "../../packages/ui/Breadcrumbs";
 import { Input } from "../../packages/ui/Input";
 import { Select } from "../../packages/ui/Select";
 import { EmptyState } from "../../packages/ui/EmptyState";
+import { CategoryDialog } from "../components/categories/CategoryDialog";
 import {
   FolderTree,
   Plus,
@@ -36,6 +37,10 @@ export function CategoryListPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+
+  // Dialog State
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
 
   // Notice/action feedback state for placeholder handlers
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -69,9 +74,10 @@ export function CategoryListPage() {
     setTimeout(() => setActionFeedback(null), 3500);
   };
 
-  // Action placeholder handlers
+  // Handlers
   const handleNewCategory = () => {
-    triggerPlaceholderFeedback("Action Placeholder: Create New Category dialog triggered");
+    setSelectedCategory(null);
+    setIsDialogOpen(true);
   };
 
   const handleView = (category: Category) => {
@@ -79,7 +85,8 @@ export function CategoryListPage() {
   };
 
   const handleEdit = (category: Category) => {
-    triggerPlaceholderFeedback(`Action Placeholder: Editing category "${category.name}" (${category.code})`);
+    setSelectedCategory(category);
+    setIsDialogOpen(true);
   };
 
   const handleDelete = (category: Category) => {
@@ -418,6 +425,17 @@ export function CategoryListPage() {
           </div>
         </div>
       </div>
+
+      {/* Category Create/Edit Dialog */}
+      <CategoryDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        category={selectedCategory}
+        onSuccess={(msg) => {
+          triggerPlaceholderFeedback(msg);
+          refetch();
+        }}
+      />
     </div>
   );
 }
