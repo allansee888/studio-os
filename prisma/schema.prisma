@@ -33,6 +33,7 @@ model User {
   updatedAt       DateTime @updatedAt
 
   userRoles       UserRole[]
+  userPermissions UserPermission[]
   sessions        Session[]
   auditLogs       AuditLog[]
 
@@ -64,6 +65,7 @@ model Permission {
   updatedAt       DateTime @updatedAt
 
   rolePermissions RolePermission[]
+  userPermissions UserPermission[]
 }
 
 model RolePermission {
@@ -82,12 +84,27 @@ model UserRole {
   id        String   @id @default(uuid())
   userId    String
   roleId    String
+  branchId  String?  // Optional branch-level role scoping
   createdAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
+}
+
+model UserPermission {
+  id           String     @id @default(uuid())
+  userId       String
+  permissionId String
+  isGranted    Boolean    @default(true) // true = grant, false = explicit deny
+  branchId     String?    // Optional branch-level permission scoping
+  createdAt    DateTime   @default(now())
+
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
 }
 
 model Session {
@@ -157,17 +174,23 @@ enum ProductionJobStatus {
   CANCELLED
 }
 
-model CatalogCategory {
-  id          String   @id @default(uuid())
-  name        String
-  description String?
-  parentId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model Category {
+  id               String      @id @default(uuid())
+  code             String      @unique
+  name             String
+  description      String?
+  parentCategoryId String?
+  displayOrder     Int         @default(0)
+  isActive         Boolean     @default(true)
+  deletedAt        DateTime?
+  createdBy        String?
+  updatedBy        String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
-  parent      CatalogCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
-  children    CatalogCategory[] @relation("CategoryHierarchy")
-  items       CatalogItem[]
+  parent           Category?   @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  children         Category[]  @relation("CategoryHierarchy")
+  items            CatalogItem[]
 }
 
 model Supplier {
@@ -203,6 +226,23 @@ model Customer {
   orders         Order[]
 }
 
+model UnitOfMeasure {
+  id           String        @id @default(uuid())
+  code         String        @unique
+  name         String
+  abbreviation String
+  description  String?
+  isActive     Boolean       @default(true)
+  displayOrder Int           @default(0)
+  deletedAt    DateTime?
+  createdBy    String?
+  updatedBy    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  catalogItems CatalogItem[]
+}
+
 model CatalogItem {
   id                 String          @id @default(uuid())
   sku                String          @unique
@@ -216,12 +256,14 @@ model CatalogItem {
   categoryId         String?
   workflowTemplateId String?
   supplierId         String?
+  uomId              String?
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
-  category           CatalogCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category           Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
   supplier           Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  uom                UnitOfMeasure?   @relation(fields: [uomId], references: [id], onDelete: SetNull)
   inventoryItem      InventoryItem?
   orderItems         OrderItem[]
 }

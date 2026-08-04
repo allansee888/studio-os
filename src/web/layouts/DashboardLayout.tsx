@@ -1,148 +1,277 @@
-import React, { useMemo } from "react";
-import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { 
   Camera, 
-  LayoutDashboard, 
-  ShoppingCart, 
-  Package, 
-  Scissors, 
-  Users,
-  Settings,
-  BarChart2,
-  Receipt,
-  LogOut,
-  Search,
-  Moon,
-  Sun,
-  Shield
+  ChevronLeft, 
+  ChevronRight, 
+  Menu, 
+  Search, 
+  X,
+  Building2,
+  LogOut
 } from "lucide-react";
-import { Avatar } from "../../packages/ui/Avatar";
 import { ToastContainer } from "../../packages/ui/ToastContainer";
-import { useTheme } from "../providers/ThemeProvider";
+import { Breadcrumbs } from "../../packages/ui/Breadcrumbs";
 import { useAuthStore } from "../store/authStore";
-
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Orders", href: "/orders", icon: ShoppingCart, permission: "orders.view" },
-  { name: "Inventory", href: "/inventory", icon: Package, permission: "inventory.view" },
-  { name: "Services", href: "/services", icon: Scissors }, // No specific permission
-  { name: "Customers", href: "/customers", icon: Users, permission: "customers.view" },
-  { name: "Production", href: "/production", icon: Receipt, permission: "production.view" },
-  { name: "Reports", href: "/reports", icon: BarChart2, permission: "reports.view" },
-  { name: "Users", href: "/users", icon: Users, permission: "users.view" },
-  { name: "Roles", href: "/roles", icon: Shield, permission: "roles.view" },
-  { name: "Settings", href: "/settings", icon: Settings, permission: "settings.manage" },
-];
+import { navigationConfig, NavGroup, NavItem } from "../config/navigation";
+import { getBreadcrumbsForPath } from "../utils/breadcrumbs";
+import { QuickSearchModal } from "../components/QuickSearchModal";
+import { NotificationsPopover } from "../components/NotificationsPopover";
+import { UserProfileMenu } from "../components/UserProfileMenu";
+import { BranchSelector } from "../components/BranchSelector";
 
 export function DashboardLayout() {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
-  const { user, logout, hasPermission } = useAuthStore();
+  const { hasPermission } = useAuthStore();
 
-  const handleLogout = async () => {
+  // Sidebar Collapsed State (persisted in localStorage)
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
     try {
-      await fetch("/api/v1/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.error(e);
+      const saved = localStorage.getItem("studioos_sidebar_collapsed");
+      return saved ? JSON.parse(saved) : false;
+    } catch {
+      return false;
     }
-    logout();
-    navigate("/login");
-  };
+  });
 
-  const getHeaderTitle = () => {
-    const currentNavItem = navigation.find(item => 
-      item.href === '/' ? pathname === '/' : pathname.startsWith(item.href)
-    );
-    return currentNavItem ? `${currentNavItem.name}` : 'Overview';
-  };
+  // Mobile Drawer Open State
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const filteredNavigation = useMemo(() => {
-    return navigation.filter(item => {
-      if (!item.permission) return true;
-      return hasPermission(item.permission);
+  // Quick Search Modal State
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Persist collapse state
+  const toggleSidebar = () => {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem("studioos_sidebar_collapsed", JSON.stringify(next));
+      } catch (e) {
+        console.error(e);
+      }
+      return next;
     });
+  };
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
+
+  // Handle ESC key for mobile drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobileOpen) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileOpen]);
+
+  // Filter navigation by permissions
+  const filteredNavGroups = useMemo(() => {
+    return navigationConfig
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) => {
+          if (!item.permission) return true;
+          return hasPermission(item.permission);
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
   }, [hasPermission]);
+
+  const breadcrumbs = useMemo(() => getBreadcrumbsForPath(pathname), [pathname]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden font-sans text-slate-900 bg-slate-50 dark:bg-slate-950 transition-colors">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-slate-900 flex-shrink-0 flex flex-col">
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded flex items-center justify-center">
-              <Camera className="w-5 h-5 text-white" />
+      
+      {/* ================= SIDEBAR (Desktop) ================= */}
+      <aside
+        className={`hidden md:flex flex-col bg-slate-900 text-slate-300 transition-all duration-300 flex-shrink-0 relative ${
+          isCollapsed ? "w-20" : "w-64"
+        }`}
+        aria-label="Desktop Navigation"
+      >
+        {/* Brand Header */}
+        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 flex-shrink-0">
+          <Link to="/" className="flex items-center gap-3 overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-1">
+            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white flex-shrink-0 shadow-md">
+              <Camera className="w-5 h-5" />
             </div>
-            <h1 className="text-white font-bold tracking-tight text-lg">StudioOS</h1>
-          </div>
-        </div>
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-          {filteredNavigation.map((item) => {
-            const isActive = pathname === item.href || (pathname.startsWith(item.href) && item.href !== '/');
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
-                  isActive
-                    ? 'bg-blue-600 text-white font-medium'
-                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        
-        {/* User profile section */}
-        <div className="p-4 border-t border-slate-800">
-          <div className="flex items-center gap-3">
-            <Avatar fallback={user?.firstName?.charAt(0) || 'U'} className="bg-slate-700 text-white border border-slate-600" />
-            <div className="overflow-hidden flex-1">
-              <p className="text-xs text-white font-medium truncate">{user?.displayName || 'User'}</p>
-              <p className="text-[10px] text-slate-500 truncate">{user?.email}</p>
-            </div>
-          </div>
+            {!isCollapsed && (
+              <div className="overflow-hidden">
+                <h1 className="text-white font-bold tracking-tight text-lg leading-tight">StudioOS</h1>
+                <p className="text-[10px] text-slate-400 tracking-wide uppercase font-semibold">ERP Platform</p>
+              </div>
+            )}
+          </Link>
+
           <button
-            onClick={handleLogout}
-            className="mt-4 w-full flex items-center justify-center px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs font-semibold text-white hover:bg-slate-700 transition-colors"
+            onClick={toggleSidebar}
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
         </div>
+
+        {/* Scrollable Navigation Items */}
+        <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto" role="navigation">
+          {filteredNavGroups.map((group) => (
+            <div key={group.id} className="space-y-1">
+              {!isCollapsed && (
+                <h2 className="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                  {group.title}
+                </h2>
+              )}
+              {group.items.map((item) => {
+                const isActive =
+                  pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/");
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    title={isCollapsed ? item.name : undefined}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isActive
+                        ? "bg-blue-600 text-white font-medium shadow-sm"
+                        : "text-slate-400 hover:text-white hover:bg-slate-800/80"
+                    } ${isCollapsed ? "justify-center" : ""}`}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon className="w-4 h-4 flex-shrink-0" />
+                    {!isCollapsed && <span className="truncate">{item.name}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-8 flex-shrink-0 transition-colors">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-100">{getHeaderTitle()}</h2>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative hidden md:block">
-              <input type="text" placeholder="Search..." className="w-64 pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white dark:focus:bg-slate-900 transition-colors" />
-              <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+      {/* ================= MOBILE NAVIGATION DRAWER ================= */}
+      {isMobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => setIsMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Content */}
+          <div className="relative flex-1 max-w-xs w-full bg-slate-900 text-slate-300 flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <h1 className="text-white font-bold tracking-tight text-lg">StudioOS</h1>
+              </div>
+              <button
+                onClick={() => setIsMobileOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-white rounded-lg"
+                aria-label="Close mobile menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            
-            <button 
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-              title="Toggle theme"
+
+            <nav className="flex-1 px-4 py-4 space-y-6 overflow-y-auto" role="navigation">
+              {filteredNavGroups.map((group) => (
+                <div key={group.id} className="space-y-1">
+                  <h2 className="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    {group.title}
+                  </h2>
+                  {group.items.map((item) => {
+                    const isActive =
+                      pathname === item.href || (pathname.startsWith(item.href) && item.href !== "/");
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                          isActive
+                            ? "bg-blue-600 text-white font-medium"
+                            : "text-slate-400 hover:text-white hover:bg-slate-800"
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{item.name}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
+            </nav>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MAIN CONTENT CONTAINER ================= */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        
+        {/* Global Header */}
+        <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 flex-shrink-0 transition-colors z-20">
+          
+          {/* Left Header Section: Mobile Menu Toggle + Branch Selector */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileOpen(true)}
+              className="md:hidden p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+              aria-label="Open navigation menu"
             >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
+
+            {/* Branch Selector Dropdown */}
+            <BranchSelector />
+          </div>
+
+          {/* Right Header Section: Search, Notifications, User Profile */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Search Bar */}
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="flex items-center gap-3 px-3 py-1.5 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200/80 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-lg text-xs text-slate-500 dark:text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Open quick search"
+            >
+              <Search className="w-4 h-4 text-slate-400" />
+              <span className="hidden sm:inline">Search studio...</span>
+              <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-[10px] font-mono text-slate-400">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* Notifications Popover */}
+            <NotificationsPopover />
+
+            {/* User Profile Menu */}
+            <UserProfileMenu />
           </div>
         </header>
 
-        {/* Scrollable Content Viewport */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        {/* Sub-Header Breadcrumb Bar */}
+        <div className="bg-white dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2.5 transition-colors">
+          <Breadcrumbs items={breadcrumbs} />
+        </div>
+
+        {/* Scrollable Viewport */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto focus:outline-none" tabIndex={-1}>
           <Outlet />
         </main>
       </div>
+
+      {/* Quick Search Modal */}
+      <QuickSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+
       <ToastContainer />
     </div>
   );

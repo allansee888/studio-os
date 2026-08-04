@@ -4,11 +4,12 @@ import { ChevronDown } from "lucide-react";
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
-  options: { label: string; value: string | number }[];
+  options?: { label: string; value: string | number }[];
+  children?: React.ReactNode;
 }
 
 export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, error, options, ...props }, ref) => {
+  ({ className, error, options, children, ...props }, ref) => {
     return (
       <div className="w-full relative">
         <select
@@ -22,11 +23,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           )}
           {...props}
         >
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
+          {options
+            ? options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))
+            : children}
         </select>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
           <ChevronDown className="h-4 w-4" />

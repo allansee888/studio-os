@@ -3,6 +3,8 @@ import authRoutes from './auth';
 import userRoutes from './users';
 import roleRoutes from './roles';
 import permissionRoutes from './permissions';
+import categoryRoutes from './categories';
+import unitRoutes from './units';
 import { healthRouter } from '../../routes/health.ts';
 import cookieParser from 'cookie-parser';
 
@@ -17,3 +19,7 @@ v1Router.use('/auth', authRoutes);
 v1Router.use('/users', userRoutes);
 v1Router.use('/roles', roleRoutes);
 v1Router.use('/permissions', permissionRoutes);
+v1Router.use('/categories', categoryRoutes);
+v1Router.use('/catalog/categories', categoryRoutes);
+v1Router.use('/units', unitRoutes);
+v1Router.use('/catalog/units', unitRoutes);

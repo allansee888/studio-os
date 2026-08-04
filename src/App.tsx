@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { ThemeProvider } from './web/providers/ThemeProvider';
@@ -14,53 +14,51 @@ import { Login } from './web/pages/Login';
 import { Dashboard } from './web/pages/Dashboard';
 import { Users } from './web/pages/Users';
 import { Roles } from './web/pages/Roles';
+import { Categories } from './web/pages/Categories';
+import { Units } from './web/pages/Units';
 import { EmptyModulePlaceholder } from './web/pages/EmptyModulePlaceholder';
-import { NotFound, Unauthorized } from './web/pages/StatusPages';
+import { LoadingScreen } from './web/pages/LoadingScreen';
+import { NotFound, Unauthorized, Forbidden, ServerError } from './web/pages/StatusPages';
+import { RouteGuard } from './web/components/RouteGuard';
 import { useAuthStore } from './web/store/authStore';
 
 const queryClient = new QueryClient();
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const location = useLocation();
   
   if (isLoading) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">Loading...</div>;
+    return <LoadingScreen />;
   }
   
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
   
   return <>{children}</>;
 }
 
-function RequirePermission({ permission, children }: { permission: string, children: React.ReactNode }) {
-  const { hasPermission, isLoading } = useAuthStore();
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthStore();
   
-  if (isLoading) return null;
-
-  if (!hasPermission(permission)) {
-    return <Navigate to="/unauthorized" replace />;
+  if (isLoading) {
+    return <LoadingScreen />;
   }
-
+  
+  if (isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
   return <>{children}</>;
 }
 
 function AuthInit({ children }: { children: React.ReactNode }) {
-  const setAuth = useAuthStore(state => state.setAuth);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
   
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        if (data.user) {
-          setAuth(data.user);
-        } else {
-          setAuth(null);
-        }
-      })
-      .catch(() => setAuth(null));
-  }, [setAuth]);
+    checkAuth();
+  }, [checkAuth]);
 
   return <>{children}</>;
 }
@@ -73,25 +71,38 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route element={<AuthLayout />}>
-                <Route path="/login" element={<Login />} />
+                <Route
+                  path="/login"
+                  element={
+                    <PublicOnlyRoute>
+                      <Login />
+                    </PublicOnlyRoute>
+                  }
+                />
               </Route>
               
               <Route path="/" element={<PrivateRoute><DashboardLayout /></PrivateRoute>}>
                 <Route index element={<Dashboard />} />
                 
-                <Route path="users" element={<RequirePermission permission="users.view"><Users /></RequirePermission>} />
-                <Route path="roles" element={<RequirePermission permission="roles.view"><Roles /></RequirePermission>} />
+                <Route path="users" element={<RouteGuard permission="users:view"><Users /></RouteGuard>} />
+                <Route path="roles" element={<RouteGuard permission="roles:view"><Roles /></RouteGuard>} />
+                <Route path="categories" element={<RouteGuard permission="catalog.category.view"><Categories /></RouteGuard>} />
+                <Route path="catalog/categories" element={<RouteGuard permission="catalog.category.view"><Categories /></RouteGuard>} />
+                <Route path="units" element={<RouteGuard permission="unit.view"><Units /></RouteGuard>} />
+                <Route path="catalog/units" element={<RouteGuard permission="unit.view"><Units /></RouteGuard>} />
 
-                <Route path="orders" element={<RequirePermission permission="orders.view"><EmptyModulePlaceholder title="Orders" /></RequirePermission>} />
-                <Route path="inventory" element={<RequirePermission permission="inventory.view"><EmptyModulePlaceholder title="Inventory" /></RequirePermission>} />
-                <Route path="services" element={<EmptyModulePlaceholder title="Services" />} />
-                <Route path="customers" element={<RequirePermission permission="customers.view"><EmptyModulePlaceholder title="Customers" /></RequirePermission>} />
-                <Route path="production" element={<RequirePermission permission="production.view"><EmptyModulePlaceholder title="Production" /></RequirePermission>} />
-                <Route path="reports" element={<RequirePermission permission="reports.view"><EmptyModulePlaceholder title="Reports" /></RequirePermission>} />
-                <Route path="settings" element={<RequirePermission permission="settings.manage"><EmptyModulePlaceholder title="Settings" /></RequirePermission>} />
+                <Route path="orders" element={<RouteGuard permission="orders:view"><EmptyModulePlaceholder title="Orders" /></RouteGuard>} />
+                <Route path="inventory" element={<RouteGuard permission="inventory:view"><EmptyModulePlaceholder title="Inventory" /></RouteGuard>} />
+                <Route path="services" element={<RouteGuard permission="services:view"><EmptyModulePlaceholder title="Services" /></RouteGuard>} />
+                <Route path="customers" element={<RouteGuard permission="customers:view"><EmptyModulePlaceholder title="Customers" /></RouteGuard>} />
+                <Route path="production" element={<RouteGuard permission="production:view"><EmptyModulePlaceholder title="Production" /></RouteGuard>} />
+                <Route path="reports" element={<RouteGuard permission="reports:view"><EmptyModulePlaceholder title="Reports" /></RouteGuard>} />
+                <Route path="settings" element={<RouteGuard permission="settings:manage"><EmptyModulePlaceholder title="Settings" /></RouteGuard>} />
               </Route>
               
               <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/forbidden" element={<Forbidden />} />
+              <Route path="/500" element={<ServerError />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

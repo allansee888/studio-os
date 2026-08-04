@@ -1,143 +1,131 @@
 import { Router } from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { prisma } from "../../../db/prisma";
+import { ZodError } from "zod";
+import { AuthService, AuthError } from "../../services/authService";
 import { authenticate } from "../../middlewares/auth";
+import { loginSchema } from "../../../packages/validation/auth";
 import { config } from "../../../config/index";
 
 const router = Router();
-const JWT_SECRET = config.JWT_SECRET;
 
+/**
+ * POST /api/v1/auth/login
+ * Support login using email or username, bcrypt password validation, JWT generation.
+ */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    const input = loginSchema.parse(req.body);
+    const clientIp = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"];
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: {
-        userRoles: {
-          include: { role: { include: { rolePermissions: { include: { permission: true } } } } }
-        }
-      }
-    });
+    const result = await AuthService.login(input, clientIp, userAgent);
 
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    if (user.status !== "Active") {
-      return res.status(401).json({ error: `Account is ${user.status.toLowerCase()}` });
-    }
-
-    if (user.lockedUntil && user.lockedUntil > new Date()) {
-      return res.status(401).json({ error: "Account is locked due to too many failed attempts" });
-    }
-
-    const isValid = await bcrypt.compare(password, user.passwordHash);
-
-    if (!isValid) {
-      const failedLogins = user.failedLogins + 1;
-      const lockedUntil = failedLogins >= 5 ? new Date(Date.now() + 15 * 60 * 1000) : null;
-      
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { failedLogins, lockedUntil }
-      });
-
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    // Reset failed logins
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { failedLogins: 0, lockedUntil: null, lastLogin: new Date() }
-    });
-
-    // Create session
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + (rememberMe ? 30 : 1));
-
-    const tokenPayload = { userId: user.id };
-    const refreshToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: rememberMe ? "30d" : "1d" });
-
-    const session = await prisma.session.create({
-      data: {
-        userId: user.id,
-        token: refreshToken,
-        ipAddress: req.ip || req.socket.remoteAddress,
-        browser: req.headers["user-agent"],
-        expiresAt
-      }
-    });
-
-    // Log the login
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: "Login",
-        ipAddress: req.ip || req.socket.remoteAddress
-      }
-    });
-
-    const accessToken = jwt.sign({ userId: user.id, sessionId: session.id }, JWT_SECRET, { expiresIn: "1h" });
-
-    // Permissions
-    const permissions = new Set<string>();
-    user.userRoles.forEach(ur => ur.role.rolePermissions.forEach(rp => permissions.add(rp.permission.name)));
-
-    const userData = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      displayName: user.displayName,
-      requiresPasswordChange: user.requiresPasswordChange,
-      permissions: Array.from(permissions)
-    };
-
-    res.cookie("accessToken", accessToken, {
+    // Set HTTP-only cookies
+    res.cookie("accessToken", result.accessToken, {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: "lax",
       maxAge: 3600000 // 1 hour
     });
 
-    res.json({ user: userData, accessToken });
-  } catch (error) {
-    console.error("Login error", error);
+    res.cookie("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: result.expiresAt.getTime() - Date.now()
+    });
+
+    res.json({
+      user: result.user,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken
+    });
+  } catch (error: any) {
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: "Validation failed",
+        details: error.issues.map((e) => e.message)
+      });
+    }
+
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
+
+    console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.post("/logout", authenticate, async (req, res) => {
+/**
+ * POST /api/v1/auth/refresh
+ * Refresh access token using refresh token.
+ */
+router.post("/refresh", async (req, res) => {
   try {
-    if (req.session) {
-      await prisma.session.update({
-        where: { id: req.session.id },
-        data: { isRevoked: true }
-      });
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    const clientIp = req.ip || req.socket.remoteAddress;
+    const userAgent = req.headers["user-agent"];
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: "Refresh token is required" });
     }
 
-    if (req.user) {
-      await prisma.auditLog.create({
-        data: {
-          userId: req.user.id,
-          action: "Logout",
-          ipAddress: req.ip || req.socket.remoteAddress
-        }
-      });
+    const result = await AuthService.refresh(refreshToken, clientIp, userAgent);
+
+    // Update access token cookie
+    res.cookie("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: config.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 3600000 // 1 hour
+    });
+
+    res.json({
+      user: result.user,
+      accessToken: result.accessToken
+    });
+  } catch (error: any) {
+    // Clear cookies if refresh fails
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    if (error instanceof AuthError) {
+      return res.status(error.statusCode).json({ error: error.message });
     }
+
+    res.status(401).json({ error: "Invalid or expired refresh token" });
+  }
+});
+
+/**
+ * POST /api/v1/auth/logout
+ * Revoke session and clear authentication cookies.
+ */
+router.post("/logout", async (req, res) => {
+  try {
+    const sessionId = req.session?.id;
+    const userId = req.user?.id;
+    const clientIp = req.ip || req.socket.remoteAddress;
+
+    await AuthService.logout(sessionId, userId, clientIp);
 
     res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
     res.json({ message: "Logged out successfully" });
   } catch (error) {
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
     res.status(500).json({ error: "Internal server error" });
   }
 });
 
-router.get("/me", authenticate, async (req, res) => {
-  const { passwordHash, ...userData } = req.user;
-  res.json({ user: userData });
+/**
+ * GET /api/v1/auth/me
+ * Returns the current authenticated user session details.
+ */
+router.get("/me", authenticate, (req, res) => {
+  res.json({ user: req.user });
 });
 
 export default router;

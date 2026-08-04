@@ -5,7 +5,6 @@ import { config } from "../../config/index";
 
 const JWT_SECRET = config.JWT_SECRET;
 
-// Extend Request type to include user
 declare global {
   namespace Express {
     interface Request {
@@ -38,15 +37,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
         where: { id: decoded.sessionId }
       });
       
-      if (!session || session.isRevoked) {
-        return res.status(401).json({ error: "Session revoked or invalid" });
+      if (!session || session.isRevoked || session.expiresAt <= new Date()) {
+        return res.status(401).json({ error: "Session revoked or expired" });
       }
       
       // Update last activity
       await prisma.session.update({
         where: { id: session.id },
         data: { lastActivity: new Date() }
-      });
+      }).catch(() => {});
       
       req.session = session;
     }
@@ -66,6 +65,11 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
               }
             }
           }
+        },
+        userPermissions: {
+          include: {
+            permission: true
+          }
         }
       }
     });
@@ -74,17 +78,43 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
       return res.status(401).json({ error: "User inactive or not found" });
     }
 
-    // Flatten permissions
+    // Flatten permissions & roles
     const permissions = new Set<string>();
-    user.userRoles.forEach((ur: any) => {
-      ur.role.rolePermissions.forEach((rp: any) => {
-        permissions.add(rp.permission.name);
+    const roles: string[] = [];
+
+    if (user.userRoles && Array.isArray(user.userRoles)) {
+      user.userRoles.forEach((ur: any) => {
+        if (ur.role) {
+          roles.push(ur.role.name);
+          if (ur.role.rolePermissions) {
+            ur.role.rolePermissions.forEach((rp: any) => {
+              if (rp.permission?.name) {
+                permissions.add(rp.permission.name);
+              }
+            });
+          }
+        }
       });
-    });
+    }
+
+    if (user.userPermissions && Array.isArray(user.userPermissions)) {
+      user.userPermissions.forEach((up: any) => {
+        if (up.permission?.name) {
+          if (up.isGranted === false) {
+            permissions.delete(up.permission.name);
+          } else {
+            permissions.add(up.permission.name);
+          }
+        }
+      });
+    }
+
+    const { passwordHash, ...safeUserData } = user;
 
     req.user = {
-      ...user,
-      permissions: Array.from(permissions)
+      ...safeUserData,
+      permissions: Array.from(permissions),
+      roles
     };
 
     next();

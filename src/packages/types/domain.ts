@@ -35,18 +35,43 @@ export enum ProductionJobStatus {
   CANCELLED = "CANCELLED",
 }
 
-export interface CatalogCategory {
+export interface UnitOfMeasure {
   id: string;
+  code: string;
+  name: string;
+  abbreviation: string;
+  description?: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  deletedAt?: Date | string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  catalogItems?: CatalogItem[];
+}
+
+export interface Category {
+  id: string;
+  code: string;
   name: string;
   description?: string | null;
-  parentId?: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  parentCategoryId?: string | null;
+  displayOrder: number;
+  isActive: boolean;
+  deletedAt?: Date | string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 
-  parent?: CatalogCategory | null;
-  children?: CatalogCategory[];
+  parent?: Category | null;
+  children?: Category[];
   items?: CatalogItem[];
 }
+
+export type CatalogCategory = Category;
 
 export interface Supplier {
   id: string;
@@ -94,10 +119,12 @@ export interface CatalogItem {
   categoryId?: string | null;
   workflowTemplateId?: string | null;
   supplierId?: string | null;
+  uomId?: string | null;
   createdAt: Date;
   updatedAt: Date;
 
   category?: CatalogCategory | null;
+  uom?: UnitOfMeasure | null;
   workflowTemplate?: WorkflowTemplate | null;
   supplier?: Supplier | null;
   inventoryItem?: InventoryItem | null;
