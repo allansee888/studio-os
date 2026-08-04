@@ -3,7 +3,7 @@ import authRoutes from './auth';
 import userRoutes from './users';
 import roleRoutes from './roles';
 import permissionRoutes from './permissions';
-import categoryRoutes from './categories';
+import categoryRoutes from './category.routes';
 import unitRoutes from './units';
 import { healthRouter } from '../../routes/health.ts';
 import cookieParser from 'cookie-parser';

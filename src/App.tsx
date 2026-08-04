@@ -14,7 +14,7 @@ import { Login } from './web/pages/Login';
 import { Dashboard } from './web/pages/Dashboard';
 import { Users } from './web/pages/Users';
 import { Roles } from './web/pages/Roles';
-import { Categories } from './web/pages/Categories';
+import { CategoryListPage } from './web/pages/CategoryListPage';
 import { Units } from './web/pages/Units';
 import { EmptyModulePlaceholder } from './web/pages/EmptyModulePlaceholder';
 import { LoadingScreen } from './web/pages/LoadingScreen';
@@ -86,8 +86,8 @@ export default function App() {
                 
                 <Route path="users" element={<RouteGuard permission="users:view"><Users /></RouteGuard>} />
                 <Route path="roles" element={<RouteGuard permission="roles:view"><Roles /></RouteGuard>} />
-                <Route path="categories" element={<RouteGuard permission="catalog.category.view"><Categories /></RouteGuard>} />
-                <Route path="catalog/categories" element={<RouteGuard permission="catalog.category.view"><Categories /></RouteGuard>} />
+                <Route path="categories" element={<RouteGuard permissions={["category.view", "catalog.category.view"]}><CategoryListPage /></RouteGuard>} />
+                <Route path="catalog/categories" element={<RouteGuard permissions={["category.view", "catalog.category.view"]}><CategoryListPage /></RouteGuard>} />
                 <Route path="units" element={<RouteGuard permission="unit.view"><Units /></RouteGuard>} />
                 <Route path="catalog/units" element={<RouteGuard permission="unit.view"><Units /></RouteGuard>} />
 

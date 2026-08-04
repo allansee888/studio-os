@@ -15,6 +15,9 @@ declare global {
 }
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+  if (req.user) {
+    return next();
+  }
   try {
     const authHeader = req.headers.authorization;
     let token = "";

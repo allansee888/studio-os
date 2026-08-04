@@ -2,6 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { config } from '../../config/index';
 
+export * from "./validation";
+export * from "./auth";
+export * from "./rbac";
+
 export const loggingMiddleware = (req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -32,4 +36,3 @@ export const errorMiddleware = (err: any, req: Request, res: Response, next: Nex
     ...(config.NODE_ENV === 'development' ? { stack: err.stack } : {}),
   });
 };
-
