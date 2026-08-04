@@ -1,11 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import { config } from '../../config/index';
-
-// Placeholder for future authentication
-export const requireAuthPlaceholder = (req: Request, res: Response, next: NextFunction) => {
-  // Always proceed for sprint 0
-  next();
-};
 
 export const loggingMiddleware = (req: Request, res: Response, next: NextFunction) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -13,9 +8,28 @@ export const loggingMiddleware = (req: Request, res: Response, next: NextFunctio
 };
 
 export const errorMiddleware = (err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Unhandled Error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: config.NODE_ENV === 'development' ? err.message : undefined
+  console.error('[Global Error Handler]:', err);
+
+  if (err instanceof ZodError) {
+    return res.status(400).json({
+      error: 'Validation Error',
+      details: err.issues,
+    });
+  }
+
+  if (err instanceof SyntaxError && 'status' in err && (err as any).status === 400) {
+    return res.status(400).json({
+      error: 'Bad Request',
+      message: 'Invalid JSON payload',
+    });
+  }
+
+  const statusCode = typeof err.statusCode === 'number' ? err.statusCode : 500;
+
+  return res.status(statusCode).json({
+    error: err.name || 'Internal Server Error',
+    message: err.message || 'An unexpected error occurred',
+    ...(config.NODE_ENV === 'development' ? { stack: err.stack } : {}),
   });
 };
+

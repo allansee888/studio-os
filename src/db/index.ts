@@ -1,6 +1,4 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import * as schema from './schema.ts';
 import { config } from '../config/index.ts';
 
 declare global {
@@ -22,6 +20,6 @@ export const createPool = () => {
   return global._postgresPool;
 };
 
-const pool = createPool();
+export const pool = createPool();
+export { prisma } from './prisma.ts';
 
-export const db = drizzle(pool, { schema });
