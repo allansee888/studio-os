@@ -10,6 +10,7 @@ import { Input } from "../../packages/ui/Input";
 import { Select } from "../../packages/ui/Select";
 import { EmptyState } from "../../packages/ui/EmptyState";
 import { CategoryDialog } from "../components/categories/CategoryDialog";
+import { CategoryDeleteDialog } from "../components/categories/CategoryDeleteDialog";
 import {
   FolderTree,
   Plus,
@@ -28,6 +29,7 @@ import {
 export function CategoryListPage() {
   const { hasAnyPermission } = usePermission();
   const canView = hasAnyPermission(["category.view", "catalog.category.view"]);
+  const canDelete = hasAnyPermission(["category.delete", "catalog.category.delete"]);
 
   // State for server-side search, filtering, sorting, and pagination
   const [search, setSearch] = useState("");
@@ -41,6 +43,10 @@ export function CategoryListPage() {
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+
+  // Delete Dialog State
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null);
 
   // Notice/action feedback state for placeholder handlers
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -90,7 +96,8 @@ export function CategoryListPage() {
   };
 
   const handleDelete = (category: Category) => {
-    triggerPlaceholderFeedback(`Action Placeholder: Deleting category "${category.name}" (${category.code})`);
+    setCategoryToDelete(category);
+    setIsDeleteDialogOpen(true);
   };
 
   const toggleSort = (field: "name" | "code" | "displayOrder" | "createdAt") => {
@@ -354,13 +361,15 @@ export function CategoryListPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={() => handleDelete(cat)}
-                        title="Delete Category"
-                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDelete(cat)}
+                          title="Delete Category"
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -431,6 +440,20 @@ export function CategoryListPage() {
         isOpen={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
         category={selectedCategory}
+        onSuccess={(msg) => {
+          triggerPlaceholderFeedback(msg);
+          refetch();
+        }}
+      />
+
+      {/* Category Delete Confirmation Dialog */}
+      <CategoryDeleteDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setCategoryToDelete(null);
+        }}
+        category={categoryToDelete}
         onSuccess={(msg) => {
           triggerPlaceholderFeedback(msg);
           refetch();
