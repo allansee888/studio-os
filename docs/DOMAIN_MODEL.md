@@ -23,7 +23,7 @@ The StudioOS domain model encapsulates core business concepts for photography st
   - Optional linkage to `InventoryItem` (for physical stock).
   - Optional linkage to `WorkflowTemplate` (for production processes).
   - Optional `barcode` for POS scanning.
-- **CatalogCategory**: Hierarchical organization for catalog items with parent-child support.
+- **Category**: Hierarchical organization for catalog items with parent-child support.
 
 ### B. Customer & Supplier Context
 - **Customer**: Studio client records identified by human-friendly identifiers (`CUS-2026-000001`).

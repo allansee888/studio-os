@@ -9,6 +9,7 @@
     "start": "node dist/server.cjs",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
+    "db:seed": "tsx src/db/seed.ts",
     "lint": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "prepare": "husky install || true"
@@ -67,5 +68,8 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
+  },
+  "prisma": {
+    "seed": "tsx src/db/seed.ts"
   }
 }

@@ -11,8 +11,8 @@ erDiagram
     User ||--o{ StockMovement : "logs (StockMovementCreatedBy)"
     User ||--o{ ProductionJob : "assigned to (ProductionJobAssignedTo)"
 
-    CatalogCategory ||--o| CatalogCategory : "parent category"
-    CatalogCategory ||--o{ CatalogItem : "categorizes"
+    Category ||--o| Category : "parent category"
+    Category ||--o{ CatalogItem : "categorizes"
 
     Supplier ||--o{ CatalogItem : "supplies"
     Supplier ||--o{ InventoryItem : "preferred supplier"
@@ -39,12 +39,12 @@ erDiagram
 
 ### 1. Catalog & Products/Services
 - **CatalogItem**: Root entity representing either a `PHYSICAL_PRODUCT` or a `SERVICE`.
-  - Belongs to optional `CatalogCategory`.
+  - Belongs to optional `Category`.
   - Has optional `WorkflowTemplate` (primarily for Services).
   - Linked to optional `Supplier`.
   - Has optional 1:1 `InventoryItem` (primarily for Physical Products).
   - Referenced in `OrderItem`.
-- **CatalogCategory**: Hierarchical self-referencing entity for organizing catalog items.
+- **Category**: Hierarchical self-referencing entity for organizing catalog items.
 - **Supplier**: Vendors supplying products or materials.
 
 ### 2. Inventory Management

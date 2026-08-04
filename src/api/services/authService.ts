@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { prisma } from "../../db/prisma";
 import { config } from "../../config/index";
 import { LoginInput } from "../../packages/validation/auth";
@@ -103,7 +104,7 @@ export class AuthService {
     expiresAt.setDate(expiresAt.getDate() + sessionDays);
 
     // Create session in database
-    const tokenPayload = { userId: user.id, type: "refresh" };
+    const tokenPayload = { userId: user.id, type: "refresh", jti: crypto.randomUUID() };
     const refreshToken = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: `${sessionDays}d` });
 
     const session = await prisma.session.create({

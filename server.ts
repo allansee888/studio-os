@@ -4,6 +4,7 @@ import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
+import cookieParser from "cookie-parser";
 import { createServer as createViteServer } from "vite";
 import { config } from "./src/config/index.ts";
 import { errorMiddleware } from "./src/api/middlewares/index.ts";
@@ -42,6 +43,7 @@ async function startServer() {
   // Body parsing
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   // Health check routes (/api/health)
   app.use("/api/health", healthRouter);

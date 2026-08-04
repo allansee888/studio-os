@@ -191,6 +191,10 @@ model Category {
   parent           Category?   @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
   children         Category[]  @relation("CategoryHierarchy")
   items            CatalogItem[]
+
+  @@index([parentCategoryId])
+  @@index([displayOrder])
+  @@index([isActive])
 }
 
 model Supplier {
