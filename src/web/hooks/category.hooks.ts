@@ -20,17 +20,12 @@ import {
   useCrudUpdate,
   useCrudDelete,
 } from "../../hooks/crud";
+import { createCrudQueryKeys } from "../../core/crud";
 
 /**
  * Standardized Query Key Factory for Category queries
  */
-export const categoryKeys = {
-  all: ["categories"] as const,
-  lists: () => [...categoryKeys.all, "list"] as const,
-  list: (params?: CategoryQueryParams) => [...categoryKeys.lists(), params ?? {}] as const,
-  details: () => [...categoryKeys.all, "detail"] as const,
-  detail: (id: string) => [...categoryKeys.details(), id] as const,
-};
+export const categoryKeys = createCrudQueryKeys("categories");
 
 /**
  * Hook for fetching paginated/filtered list of categories

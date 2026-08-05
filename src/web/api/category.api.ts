@@ -4,18 +4,11 @@ import {
   CreateCategoryInput,
   UpdateCategoryInput,
 } from "../../packages/validation/category.validation";
+import { PaginatedResponse, PaginationMeta } from "../../core/crud";
 
-export interface PaginationMeta {
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
+export type { PaginationMeta };
 
-export interface CategoryListResponse {
-  items: Category[];
-  pagination: PaginationMeta;
-}
+export type CategoryListResponse = PaginatedResponse<Category>;
 
 export interface CategorySingleResponse {
   data: Category;
