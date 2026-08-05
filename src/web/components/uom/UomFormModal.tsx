@@ -25,6 +25,7 @@ export function UomFormModal({
   const [name, setName] = useState("");
   const [abbreviation, setAbbreviation] = useState("");
   const [description, setDescription] = useState("");
+  const [decimalPlaces, setDecimalPlaces] = useState<number>(2);
   const [displayOrder, setDisplayOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState<boolean>(true);
 
@@ -38,6 +39,7 @@ export function UomFormModal({
       setName(uom.name || "");
       setAbbreviation(uom.abbreviation || "");
       setDescription(uom.description || "");
+      setDecimalPlaces((uom as any).decimalPlaces ?? 2);
       setDisplayOrder(uom.displayOrder ?? 0);
       setIsActive(uom.isActive ?? true);
     } else {
@@ -45,6 +47,7 @@ export function UomFormModal({
       setName("");
       setAbbreviation("");
       setDescription("");
+      setDecimalPlaces(2);
       setDisplayOrder(0);
       setIsActive(true);
     }
@@ -65,6 +68,9 @@ export function UomFormModal({
     if (code && code.trim().length > 50) {
       newErrors.code = "Code cannot exceed 50 characters";
     }
+    if (decimalPlaces < 0 || decimalPlaces > 6) {
+      newErrors.decimalPlaces = "Decimal places must be between 0 and 6";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -81,6 +87,7 @@ export function UomFormModal({
       name: name.trim(),
       abbreviation: abbreviation.trim(),
       description: description.trim() || undefined,
+      decimalPlaces: Number(decimalPlaces) ?? 2,
       displayOrder: Number(displayOrder) || 0,
       isActive,
     };
@@ -150,16 +157,31 @@ export function UomFormModal({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Code <span className="text-slate-400 font-normal">(Auto-generated if blank)</span>
+              Code <span className="text-slate-400 font-normal">(Auto-gen if blank)</span>
             </label>
             <Input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="e.g., UOM-PCS"
               error={errors.code}
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              Decimal Places
+            </label>
+            <Input
+              type="number"
+              min={0}
+              max={6}
+              value={decimalPlaces}
+              onChange={(e) => setDecimalPlaces(parseInt(e.target.value) || 0)}
+              error={errors.decimalPlaces}
+              placeholder="2"
             />
           </div>
 

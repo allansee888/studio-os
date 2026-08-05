@@ -60,6 +60,16 @@ export function UomDetailsModal({
 
           <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800">
             <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
+              <Hash className="w-4 h-4 text-indigo-500" />
+              <span>Decimal Places</span>
+            </div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {(uom as any).decimalPlaces ?? 2}
+            </p>
+          </div>
+
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
               <ListOrdered className="w-4 h-4 text-emerald-500" />
               <span>Display Order</span>
             </div>
@@ -75,16 +85,6 @@ export function UomDetailsModal({
             </div>
             <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {uom.itemsCount ?? 0} item(s)
-            </p>
-          </div>
-
-          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">
-              <Hash className="w-4 h-4 text-amber-500" />
-              <span>System ID</span>
-            </div>
-            <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
-              {uom.id}
             </p>
           </div>
         </div>

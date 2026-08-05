@@ -41,6 +41,7 @@ export interface UnitOfMeasure {
   name: string;
   abbreviation: string;
   description?: string | null;
+  decimalPlaces?: number;
   displayOrder: number;
   isActive: boolean;
   deletedAt?: Date | string | null;

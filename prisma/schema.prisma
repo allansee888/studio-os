@@ -231,20 +231,26 @@ model Customer {
 }
 
 model UnitOfMeasure {
-  id           String        @id @default(uuid())
-  code         String        @unique
-  name         String
-  abbreviation String
-  description  String?
-  isActive     Boolean       @default(true)
-  displayOrder Int           @default(0)
-  deletedAt    DateTime?
-  createdBy    String?
-  updatedBy    String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id            String        @id @default(uuid())
+  code          String        @unique
+  name          String        @unique
+  abbreviation  String        @unique
+  description   String?
+  decimalPlaces Int           @default(2)
+  isActive      Boolean       @default(true)
+  displayOrder  Int           @default(0)
+  deletedAt     DateTime?
+  createdBy     String?
+  updatedBy     String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
-  catalogItems CatalogItem[]
+  catalogItems  CatalogItem[]
+
+  @@index([code])
+  @@index([name])
+  @@index([abbreviation])
+  @@index([isActive])
 }
 
 model CatalogItem {

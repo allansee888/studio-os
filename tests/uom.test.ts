@@ -1,4 +1,4 @@
-import { UomService, UomError } from "../src/api/services/uomService";
+import { uomService, UomService, UomError } from "../src/api/services/uomService";
 import { createUomSchema, updateUomSchema } from "../src/packages/validation/uom";
 import { prisma } from "../src/db/prisma";
 
@@ -48,12 +48,13 @@ async function runTests() {
   // 2. Service test: Create UOM
   let uom1Id: string = "";
   let uom2Id: string = "";
-  const testCode1 = `UOM-TEST-${Date.now().toString().slice(-4)}`;
+  const timestamp = Date.now().toString().slice(-4);
+  const testCode1 = `UOM-TEST-${timestamp}`;
 
-  await test("UomService.createUnit - Create Unit with Explicit Code", async () => {
-    const unit = await UomService.createUnit({
-      name: "Test Gallon",
-      abbreviation: "gal",
+  await test("uomService.createUnit - Create Unit with Explicit Code", async () => {
+    const unit = await uomService.createUnit({
+      name: `Test Gallon ${timestamp}`,
+      abbreviation: `gal${timestamp}`,
       code: testCode1,
       displayOrder: 10,
       isActive: true,
@@ -62,10 +63,10 @@ async function runTests() {
     uom1Id = unit.id;
   });
 
-  await test("UomService.createUnit - Auto Generate Code when Blank", async () => {
-    const unit = await UomService.createUnit({
-      name: "Test Liter",
-      abbreviation: "ltr",
+  await test("uomService.createUnit - Auto Generate Code when Blank", async () => {
+    const unit = await uomService.createUnit({
+      name: `Test Liter ${timestamp}`,
+      abbreviation: `ltr${timestamp}`,
       displayOrder: 2,
       isActive: true,
     });
@@ -74,11 +75,11 @@ async function runTests() {
   });
 
   // 3. Service test: Code Uniqueness
-  await test("UomService.createUnit - Block Duplicate Code", async () => {
+  await test("uomService.createUnit - Block Duplicate Code", async () => {
     try {
-      await UomService.createUnit({
-        name: "Duplicate Gallon",
-        abbreviation: "gal2",
+      await uomService.createUnit({
+        name: `Duplicate Code Unit ${Date.now()}`,
+        abbreviation: `dc${Date.now().toString().slice(-4)}`,
         code: testCode1,
         displayOrder: 1,
         isActive: true,
@@ -94,19 +95,19 @@ async function runTests() {
   });
 
   // 4. Service test: Update UOM
-  await test("UomService.updateUnit - Update Name and Abbreviation", async () => {
-    const updated = await UomService.updateUnit(uom1Id, {
-      name: "Test Gallon Updated",
-      abbreviation: "gal-upd",
+  await test("uomService.updateUnit - Update Name and Abbreviation", async () => {
+    const updated = await uomService.updateUnit(uom1Id, {
+      name: `Test Gallon Updated ${timestamp}`,
+      abbreviation: `gal-upd-${timestamp}`,
     });
-    if (updated.name !== "Test Gallon Updated" || updated.abbreviation !== "gal-upd") {
+    if (updated.name !== `Test Gallon Updated ${timestamp}` || updated.abbreviation !== `GAL-UPD-${timestamp}`) {
       throw new Error("UOM update failed");
     }
   });
 
   // 5. Service test: Reference Safeguard Deletion Protection
   let testItemId: string = "";
-  await test("UomService.deleteUnit - Prevent Deletion when Referenced by Catalog Item", async () => {
+  await test("uomService.deleteUnit - Prevent Deletion when Referenced by Catalog Item", async () => {
     // Create a temporary CatalogItem linked to uom1Id
     const item = await prisma.catalogItem.create({
       data: {
@@ -120,7 +121,7 @@ async function runTests() {
     testItemId = item.id;
 
     try {
-      await UomService.deleteUnit(uom1Id);
+      await uomService.deleteUnit(uom1Id);
       throw new Error("Should have blocked deletion of referenced UOM");
     } catch (err: any) {
       if (err instanceof UomError && err.message.includes("referenced by")) {
@@ -137,8 +138,8 @@ async function runTests() {
   });
 
   // 6. Service test: Soft Delete
-  await test("UomService.deleteUnit - Soft Delete UOM", async () => {
-    const deleted = await UomService.deleteUnit(uom1Id);
+  await test("uomService.deleteUnit - Soft Delete UOM", async () => {
+    const deleted = await uomService.deleteUnit(uom1Id);
     if (!deleted.id) throw new Error("Soft delete failed");
 
     // Verify soft delete in DB
@@ -148,7 +149,7 @@ async function runTests() {
 
   // 7. Cleanup second test UOM
   await test("Cleanup Second Test UOM", async () => {
-    await UomService.deleteUnit(uom2Id);
+    await uomService.deleteUnit(uom2Id);
   });
 
   console.log("==========================================");
