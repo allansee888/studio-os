@@ -35,6 +35,23 @@ export enum ProductionJobStatus {
   CANCELLED = "CANCELLED",
 }
 
+export interface Brand {
+  id: string;
+  code: string;
+  name: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  website?: string | null;
+  isActive: boolean;
+  deletedAt?: Date | string | null;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+
+  catalogItems?: CatalogItem[];
+}
+
 export interface UnitOfMeasure {
   id: string;
   code: string;
