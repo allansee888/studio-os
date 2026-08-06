@@ -278,3 +278,27 @@ export interface ProductionJob {
   orderItem?: OrderItem | null;
   workflowTemplate?: WorkflowTemplate | null;
 }
+
+export interface Product {
+  id: string;
+  sku: string;
+  barcode?: string | null;
+  name: string;
+  description?: string | null;
+  categoryId: string;
+  brandId: string;
+  unitId: string;
+  costPrice: number;
+  sellingPrice: number;
+  minimumStock: number;
+  maximumStock: number;
+  reorderPoint: number;
+  trackInventory: boolean;
+  allowNegativeInventory: boolean;
+  isActive: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  category?: Category | null;
+  brand?: Brand | null;
+  unit?: UnitOfMeasure | null;
+}

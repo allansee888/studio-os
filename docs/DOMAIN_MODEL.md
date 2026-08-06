@@ -18,12 +18,17 @@ The StudioOS domain model encapsulates core business concepts for photography st
 ## 2. Core Bounded Contexts & Entities
 
 ### A. Catalog Context
-- **CatalogItem**: Root entity representing physical products (e.g. photo frames, albums) or services (e.g. passport photos, portrait sessions, custom printing).
+- **CatalogItem (Product)**: Central root entity representing physical products (e.g. photo frames, albums) or services (e.g. passport photos, portrait sessions).
   - `itemType`: `PHYSICAL_PRODUCT` | `SERVICE`
-  - Optional linkage to `InventoryItem` (for physical stock).
+  - Core Identity: `sku` (required unique identifier), `barcode`, `name`, `description`.
+  - Pricing: `price` (selling price), `costPrice`.
+  - Inventory Config: `trackInventory`, `allowNegativeStock`.
+  - Relationships: Links to `Category`, `Brand`, `UnitOfMeasure`.
+  - Optional linkage to `InventoryItem` (for tracking physical stock levels).
   - Optional linkage to `WorkflowTemplate` (for production processes).
-  - Optional `barcode` for POS scanning.
 - **Category**: Hierarchical organization for catalog items with parent-child support.
+- **Brand**: Groups products by manufacturer or brand line.
+- **Unit of Measure (UoM)**: Defines the standard unit for quantifying the product (e.g., Piece, Box).
 
 ### B. Customer & Supplier Context
 - **Customer**: Studio client records identified by human-friendly identifiers (`CUS-2026-000001`).

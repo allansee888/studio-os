@@ -11,26 +11,26 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  employeeNumber  String?  @unique
-  username        String   @unique
-  email           String   @unique
-  passwordHash    String
-  firstName       String?
-  lastName        String?
-  displayName     String?
-  profilePhoto    String?
-  phone           String?
-  department      String?
-  status          String   @default("Active") // Active, Inactive, Locked, Suspended, Pending Activation
-  failedLogins    Int      @default(0)
-  lockedUntil     DateTime?
-  requiresPasswordChange Boolean @default(true)
-  lastLogin       DateTime?
-  createdBy       String?
-  updatedBy       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                     String    @id @default(uuid())
+  employeeNumber         String?   @unique
+  username               String    @unique
+  email                  String    @unique
+  passwordHash           String
+  firstName              String?
+  lastName               String?
+  displayName            String?
+  profilePhoto           String?
+  phone                  String?
+  department             String?
+  status                 String    @default("Active") // Active, Inactive, Locked, Suspended, Pending Activation
+  failedLogins           Int       @default(0)
+  lockedUntil            DateTime?
+  requiresPasswordChange Boolean   @default(true)
+  lastLogin              DateTime?
+  createdBy              String?
+  updatedBy              String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   userRoles       UserRole[]
   userPermissions UserPermission[]
@@ -38,31 +38,31 @@ model User {
   auditLogs       AuditLog[]
 
   // Core domain relations
-  createdOrders          Order[]          @relation("OrderCreatedBy")
-  processedPayments      Payment[]        @relation("PaymentCreatedBy")
-  stockMovements         StockMovement[]  @relation("StockMovementCreatedBy")
-  assignedProductionJobs ProductionJob[]  @relation("ProductionJobAssignedTo")
+  createdOrders          Order[]         @relation("OrderCreatedBy")
+  processedPayments      Payment[]       @relation("PaymentCreatedBy")
+  stockMovements         StockMovement[] @relation("StockMovementCreatedBy")
+  assignedProductionJobs ProductionJob[] @relation("ProductionJobAssignedTo")
 }
 
 model Role {
-  id              String   @id @default(uuid())
-  name            String   @unique // Administrator, Owner, Manager, etc.
-  description     String?
-  isSystem        Boolean  @default(false) // Cannot be deleted
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @unique // Administrator, Owner, Manager, etc.
+  description String?
+  isSystem    Boolean  @default(false) // Cannot be deleted
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
   userRoles       UserRole[]
 }
 
 model Permission {
-  id              String   @id @default(uuid())
-  name            String   @unique // products.view, orders.create, etc.
-  description     String?
-  module          String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String   @id @default(uuid())
+  name        String   @unique // products.view, orders.create, etc.
+  description String?
+  module      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   rolePermissions RolePermission[]
   userPermissions UserPermission[]
@@ -74,8 +74,8 @@ model RolePermission {
   permissionId String
   createdAt    DateTime @default(now())
 
-  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([roleId, permissionId])
 }
@@ -84,25 +84,25 @@ model UserRole {
   id        String   @id @default(uuid())
   userId    String
   roleId    String
-  branchId  String?  // Optional branch-level role scoping
+  branchId  String? // Optional branch-level role scoping
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@unique([userId, roleId])
 }
 
 model UserPermission {
-  id           String     @id @default(uuid())
+  id           String   @id @default(uuid())
   userId       String
   permissionId String
-  isGranted    Boolean    @default(true) // true = grant, false = explicit deny
-  branchId     String?    // Optional branch-level permission scoping
-  createdAt    DateTime   @default(now())
+  isGranted    Boolean  @default(true) // true = grant, false = explicit deny
+  branchId     String? // Optional branch-level permission scoping
+  createdAt    DateTime @default(now())
 
-  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, permissionId])
 }
@@ -120,20 +120,20 @@ model Session {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AuditLog {
-  id           String   @id @default(uuid())
-  userId       String?
-  action       String   // Login, Logout, Password Changed, etc.
-  entityType   String?
-  entityId     String?
-  details      String?  // JSON string
-  ipAddress    String?
-  createdAt    DateTime @default(now())
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String // Login, Logout, Password Changed, etc.
+  entityType String?
+  entityId   String?
+  details    String? // JSON string
+  ipAddress  String?
+  createdAt  DateTime @default(now())
 
-  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 // ==========================================
@@ -175,22 +175,23 @@ enum ProductionJobStatus {
 }
 
 model Category {
-  id               String      @id @default(uuid())
-  code             String      @unique
+  id               String    @id @default(uuid())
+  code             String    @unique
   name             String
   description      String?
   parentCategoryId String?
-  displayOrder     Int         @default(0)
-  isActive         Boolean     @default(true)
+  displayOrder     Int       @default(0)
+  isActive         Boolean   @default(true)
   deletedAt        DateTime?
   createdBy        String?
   updatedBy        String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  parent           Category?   @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
-  children         Category[]  @relation("CategoryHierarchy")
-  items            CatalogItem[]
+  parent   Category?     @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id], onDelete: SetNull)
+  children Category[]    @relation("CategoryHierarchy")
+  items    CatalogItem[]
+  products Product[]
 
   @@index([parentCategoryId])
   @@index([displayOrder])
@@ -227,7 +228,7 @@ model Customer {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  orders         Order[]
+  orders Order[]
 }
 
 model Brand {
@@ -244,27 +245,30 @@ model Brand {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  products Product[]
+
   @@index([code])
   @@index([name])
   @@index([isActive])
 }
 
 model UnitOfMeasure {
-  id            String        @id @default(uuid())
-  code          String        @unique
-  name          String        @unique
-  abbreviation  String        @unique
+  id            String    @id @default(uuid())
+  code          String    @unique
+  name          String    @unique
+  abbreviation  String    @unique
   description   String?
-  decimalPlaces Int           @default(2)
-  isActive      Boolean       @default(true)
-  displayOrder  Int           @default(0)
+  decimalPlaces Int       @default(2)
+  isActive      Boolean   @default(true)
+  displayOrder  Int       @default(0)
   deletedAt     DateTime?
   createdBy     String?
   updatedBy     String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  catalogItems  CatalogItem[]
+  catalogItems CatalogItem[]
+  products     Product[]
 
   @@index([code])
   @@index([name])
@@ -289,12 +293,12 @@ model CatalogItem {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 
-  category           Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
-  supplier           Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  uom                UnitOfMeasure?   @relation(fields: [uomId], references: [id], onDelete: SetNull)
-  inventoryItem      InventoryItem?
-  orderItems         OrderItem[]
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  workflowTemplate WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
+  supplier         Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  uom              UnitOfMeasure?    @relation(fields: [uomId], references: [id], onDelete: SetNull)
+  inventoryItem    InventoryItem?
+  orderItems       OrderItem[]
 }
 
 model InventoryItem {
@@ -309,9 +313,9 @@ model InventoryItem {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  catalogItem     CatalogItem     @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
-  supplier        Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-  stockMovements  StockMovement[]
+  catalogItem    CatalogItem     @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+  supplier       Supplier?       @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  stockMovements StockMovement[]
 }
 
 model StockMovement {
@@ -324,8 +328,8 @@ model StockMovement {
   createdById     String?
   createdAt       DateTime          @default(now())
 
-  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
-  createdBy       User?         @relation("StockMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+  createdBy     User?         @relation("StockMovementCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 }
 
 model WorkflowTemplate {
@@ -351,7 +355,7 @@ model WorkflowStep {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
-  workflowTemplate   WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
+  workflowTemplate WorkflowTemplate @relation(fields: [workflowTemplateId], references: [id], onDelete: Cascade)
 }
 
 model Order {
@@ -406,8 +410,8 @@ model Payment {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  order         Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  createdBy     User? @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("PaymentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
 }
 
 model ProductionJob {
@@ -425,9 +429,48 @@ model ProductionJob {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 
-  order              Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
-  orderItem          OrderItem?        @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
-  workflowTemplate   WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
-  assignedTo         User?             @relation("ProductionJobAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+  order            Order?            @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  orderItem        OrderItem?        @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  workflowTemplate WorkflowTemplate? @relation(fields: [workflowTemplateId], references: [id], onDelete: SetNull)
+  assignedTo       User?             @relation("ProductionJobAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
 }
 
+model Product {
+  id          String  @id @default(uuid())
+  sku         String  @unique
+  barcode     String? @unique
+  name        String
+  description String?
+
+  categoryId String
+  brandId    String
+  unitId     String
+
+  costPrice    Decimal @db.Decimal(18, 4)
+  sellingPrice Decimal @db.Decimal(18, 4)
+
+  minimumStock Int
+  maximumStock Int
+  reorderPoint Int
+
+  trackInventory         Boolean @default(true)
+  allowNegativeInventory Boolean @default(false)
+  isActive               Boolean @default(true)
+
+  createdBy String?
+  updatedBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  category Category      @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand    Brand         @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  unit     UnitOfMeasure @relation(fields: [unitId], references: [id], onDelete: Restrict)
+
+  @@index([sku])
+  @@index([barcode])
+  @@index([name])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([unitId])
+  @@index([isActive])
+}
