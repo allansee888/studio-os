@@ -11,6 +11,7 @@ import {
   UserCheck,
   FolderTree,
   Ruler,
+  Tag,
 } from "lucide-react";
 import React from "react";
 
@@ -41,6 +42,7 @@ export const navigationConfig: NavGroup[] = [
     title: "Catalog",
     items: [
       { name: "Categories", href: "/categories", icon: FolderTree, permission: "catalog.category.view" },
+      { name: "Brands", href: "/brands", icon: Tag, permission: "brand.view" },
       { name: "Units of Measure", href: "/units", icon: Ruler, permission: "unit.view" },
       { name: "Services", href: "/services", icon: Scissors, permission: "services:view" },
     ],

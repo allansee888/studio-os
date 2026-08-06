@@ -5,6 +5,7 @@ import roleRoutes from './roles';
 import permissionRoutes from './permissions';
 import categoryRoutes from './category.routes';
 import unitRoutes from './unit.routes';
+import brandRoutes from './brand.routes';
 import { healthRouter } from '../../routes/health.ts';
 import cookieParser from 'cookie-parser';
 
@@ -23,3 +24,5 @@ v1Router.use('/categories', categoryRoutes);
 v1Router.use('/catalog/categories', categoryRoutes);
 v1Router.use('/units', unitRoutes);
 v1Router.use('/catalog/units', unitRoutes);
+v1Router.use('/brands', brandRoutes);
+v1Router.use('/catalog/brands', brandRoutes);
